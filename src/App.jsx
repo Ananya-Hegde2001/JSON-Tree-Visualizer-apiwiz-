@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider, useReactFlow, MarkerType } from 'reactflow'
+import ReactFlow, { Background, MiniMap, ReactFlowProvider, useReactFlow, MarkerType } from 'reactflow'
 import { toPng, toSvg } from 'html-to-image'
 import 'reactflow/dist/style.css'
 import { jsonToFlow } from './utils/buildTree'
 import { parseJsonPath, stepsToPath } from './utils/jsonPath'
 import DownloadDialog from './components/DownloadDialog.jsx'
+import CanvasControls from './components/CanvasControls.jsx'
 
 const SAMPLE_JSON = `{
   "user": {
@@ -24,13 +25,12 @@ const SAMPLE_JSON = `{
   ]
 }`
 
-function Toolbar({ jsonText, setJsonText, onVisualize, onClear, onOpenDownload, onFitView, search, setSearch, onSearch, parseError, msg, theme, toggleTheme }) {
+function Toolbar({ jsonText, setJsonText, onVisualize, onClear, onOpenDownload, search, setSearch, onSearch, parseError, msg, theme, toggleTheme }) {
   return (
     <div className="toolbar">
       <div className="toolbar__top">
         <h1>JSON Tree Visualizer</h1>
         <div className="toolbar__actions">
-          <button className="btn" onClick={onFitView}>Fit View</button>
           <button className="btn" onClick={onOpenDownload}>Download Image</button>
           <button className="btn" onClick={toggleTheme}>{theme === 'light' ? 'Dark' : 'Light'} Mode</button>
         </div>
@@ -117,7 +117,7 @@ function FlowCanvas({ nodes, edges, onNodeClick, fitTick, centerTargetId }) {
     >
       <Background gap={16} />
       <MiniMap pannable zoomable />
-      <Controls showInteractive={false} />
+      <CanvasControls />
     </ReactFlow>
   )
 }
@@ -272,9 +272,7 @@ export default function App() {
     }
   }, [])
 
-  const onFitView = useCallback(() => {
-    setFitTick(t => t + 1)
-  }, [])
+  // Note: fit view is still triggered after Visualize; removed manual toolbar control
 
   // Initialize theme
   React.useEffect(() => { setThemeClass('light') }, [setThemeClass])
@@ -287,7 +285,6 @@ export default function App() {
         onVisualize={onVisualize}
         onClear={onClear}
         onOpenDownload={() => setShowDownload(true)}
-        onFitView={onFitView}
         search={search}
         setSearch={setSearch}
         onSearch={onSearch}
