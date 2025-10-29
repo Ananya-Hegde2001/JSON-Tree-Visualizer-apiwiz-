@@ -51,6 +51,30 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter,
 .canvas { flex: 1; }
 
 .flow-wrapper { position: relative; }
+.flow-wrapper, .flow-wrapper .react-flow { touch-action: none; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.55); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal { width: 520px; max-width: calc(100% - 24px); background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+.modal__header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.modal__body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.modal__footer { padding: 14px 16px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); }
+.modal__close { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label { font-size: 13px; color: var(--muted); }
+.field__input { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+
+.segmented { display: inline-flex; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.segmented__btn { padding: 8px 14px; border: 0; background: transparent; color: var(--text); cursor: pointer; }
+.segmented__btn.active { background: var(--panel); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+
+.switch { display: inline-flex; align-items: center; gap: 10px; }
+.switch input { width: 36px; height: 20px; appearance: none; background: var(--border); border-radius: 999px; position: relative; outline: none; cursor: pointer; }
+.switch input:checked { background: var(--primary); }
+.switch input::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform .15s ease; }
+.switch input:checked::after { transform: translateX(16px); }
+.switch__label { font-size: 14px; }
 
 /* Custom node styling */
 .json-node { position: relative; padding: 8px 10px; border-radius: 10px; box-shadow: 0 1px 0 rgba(0,0,0,0.04); min-width: 120px; max-width: 260px; }

@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider, useReactFlow } from 'reactflow'
-import { toPng } from 'html-to-image'
+import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider, useReactFlow, MarkerType } from 'reactflow'
+import { toPng, toSvg } from 'html-to-image'
 import 'reactflow/dist/style.css'
 import { jsonToFlow } from './utils/buildTree'
 import { parseJsonPath, stepsToPath } from './utils/jsonPath'
+import DownloadDialog from './components/DownloadDialog.jsx'
 
 const SAMPLE_JSON = `{
   "user": {
@@ -23,14 +24,14 @@ const SAMPLE_JSON = `{
   ]
 }`
 
-function Toolbar({ jsonText, setJsonText, onVisualize, onClear, onDownload, onFitView, search, setSearch, onSearch, parseError, msg, theme, toggleTheme }) {
+function Toolbar({ jsonText, setJsonText, onVisualize, onClear, onOpenDownload, onFitView, search, setSearch, onSearch, parseError, msg, theme, toggleTheme }) {
   return (
     <div className="toolbar">
       <div className="toolbar__top">
         <h1>JSON Tree Visualizer</h1>
         <div className="toolbar__actions">
           <button className="btn" onClick={onFitView}>Fit View</button>
-          <button className="btn" onClick={onDownload}>Download Image</button>
+          <button className="btn" onClick={onOpenDownload}>Download Image</button>
           <button className="btn" onClick={toggleTheme}>{theme === 'light' ? 'Dark' : 'Light'} Mode</button>
         </div>
       </div>
@@ -89,14 +90,29 @@ function FlowCanvas({ nodes, edges, onNodeClick, fitTick, centerTargetId }) {
     }
   }, [centerTargetId, nodes, rf])
 
+  // Ensure edges have inline stroke and arrowheads so exports include them
+  const defaultEdgeOptions = React.useMemo(() => ({
+    type: 'smoothstep',
+    style: { stroke: '#9aa4b2', strokeWidth: 2 },
+    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#9aa4b2' },
+  }), [])
+
   return (
     <ReactFlow
       nodes={nodes}
       edges={edges}
       onNodeClick={onNodeClick}
+      defaultEdgeOptions={defaultEdgeOptions}
       fitView
       proOptions={{ hideAttribution: true }}
       panOnScroll
+      panOnDrag
+      panOnScrollMode="free"
+      zoomOnScroll
+      zoomOnPinch
+      zoomOnDoubleClick={false}
+      minZoom={0.25}
+      maxZoom={2}
       selectionOnDrag={false}
     >
       <Background gap={16} />
@@ -118,6 +134,8 @@ export default function App() {
   const [highlightId, setHighlightId] = useState(null)
   const [fitTick, setFitTick] = useState(0)
   const [centerTargetId, setCenterTargetId] = useState(null)
+  const [showDownload, setShowDownload] = useState(false)
+  const [dlOptions, setDlOptions] = useState({ filename: 'jsontree', format: 'png', transparent: false })
 
   const reactFlowWrapper = useRef(null)
   const flowWrapperRef = useRef(null)
@@ -215,20 +233,38 @@ export default function App() {
     setHighlightId(null)
   }, [])
 
-  const onDownload = useCallback(async () => {
+  const performDownload = useCallback(async (options) => {
+    const { filename = 'jsontree', format = 'png', transparent = false } = options || {}
     setMsg('')
-    const el = flowWrapperRef.current
-    if (!el) { setMsg('Nothing to export'); return }
+    const host = flowWrapperRef.current
+    if (!host) { setMsg('Nothing to export'); return }
+    const flowEl = host.querySelector('.react-flow') || host
+    const computedBg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff'
+    const bgColor = transparent ? 'transparent' : computedBg
+    const common = {
+      cacheBust: true,
+      pixelRatio: Math.max(2, Math.ceil(window.devicePixelRatio || 1)),
+      backgroundColor: bgColor,
+      style: transparent ? { background: 'transparent' } : undefined,
+      filter: (node) => {
+        const cls = (node.className || '').toString()
+        if (cls.includes('react-flow__minimap')) return false
+        if (cls.includes('react-flow__controls')) return false
+        if (cls.includes('react-flow__attribution')) return false
+        if (transparent && cls.includes('react-flow__background')) return false
+        return true
+      },
+    }
     try {
-      const pixelRatio = 2 // higher quality
-      const dataUrl = await toPng(el, {
-        cacheBust: true,
-        pixelRatio,
-        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff',
-      })
+      let dataUrl
+      if (format === 'svg') {
+        dataUrl = await toSvg(flowEl, common)
+      } else {
+        dataUrl = await toPng(flowEl, common)
+      }
       const a = document.createElement('a')
       a.href = dataUrl
-      a.download = 'json-tree.png'
+      a.download = `${filename}.${format}`
       a.click()
       setMsg('Downloaded image')
     } catch (e) {
@@ -250,7 +286,7 @@ export default function App() {
         setJsonText={setJsonText}
         onVisualize={onVisualize}
         onClear={onClear}
-        onDownload={onDownload}
+        onOpenDownload={() => setShowDownload(true)}
         onFitView={onFitView}
         search={search}
         setSearch={setSearch}
@@ -273,6 +309,13 @@ export default function App() {
           </div>
         </ReactFlowProvider>
       </div>
+      {showDownload && (
+        <DownloadDialog
+          initial={dlOptions}
+          onCancel={() => setShowDownload(false)}
+          onConfirm={(opts) => { setDlOptions(opts); setShowDownload(false); performDownload(opts) }}
+        />
+      )}
     </div>
   )
 }
