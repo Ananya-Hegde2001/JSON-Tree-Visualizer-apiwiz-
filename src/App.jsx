@@ -25,7 +25,7 @@ const SAMPLE_JSON = `{
   ]
 }`
 
-function Toolbar({ jsonText, setJsonText, onVisualize, onClear, onOpenDownload, search, setSearch, onSearch, parseError, msg, theme, toggleTheme }) {
+function Toolbar({ onOpenDownload, theme, toggleTheme }) {
   return (
     <div className="toolbar">
       <div className="toolbar__top">
@@ -33,36 +33,6 @@ function Toolbar({ jsonText, setJsonText, onVisualize, onClear, onOpenDownload, 
         <div className="toolbar__actions">
           <button className="btn" onClick={onOpenDownload}>Download Image</button>
           <button className="btn" onClick={toggleTheme}>{theme === 'light' ? 'Dark' : 'Light'} Mode</button>
-        </div>
-      </div>
-      <div className="toolbar__grid">
-        <div className="toolbar__left">
-          <textarea
-            className="json-input"
-            placeholder={SAMPLE_JSON}
-            value={jsonText}
-            onChange={e => setJsonText(e.target.value)}
-            spellCheck={false}
-          />
-        </div>
-        <div className="toolbar__right">
-          <div className="button-row">
-            <button className="btn primary" onClick={onVisualize}>Visualize</button>
-            <button className="btn" onClick={() => setJsonText(SAMPLE_JSON)}>Load Sample</button>
-            <button className="btn ghost" onClick={onClear}>Clear</button>
-          </div>
-          <div className="search">
-            <input
-              className="search-input"
-              placeholder="Search JSONPath e.g. $.user.address.city or items[0].name"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') onSearch() }}
-            />
-            <button className="btn" onClick={onSearch}>Search</button>
-          </div>
-          {parseError && <div className="error">{parseError}</div>}
-          {msg && <div className="msg">{msg}</div>}
         </div>
       </div>
     </div>
@@ -280,31 +250,50 @@ export default function App() {
   return (
     <div className="app" ref={reactFlowWrapper}>
       <Toolbar
-        jsonText={jsonText}
-        setJsonText={setJsonText}
-        onVisualize={onVisualize}
-        onClear={onClear}
         onOpenDownload={() => setShowDownload(true)}
-        search={search}
-        setSearch={setSearch}
-        onSearch={onSearch}
-        parseError={parseError}
-        msg={msg}
         theme={theme}
         toggleTheme={toggleTheme}
       />
-      <div className="canvas">
-        <ReactFlowProvider>
-          <div ref={flowWrapperRef} className="flow-wrapper" style={{ width: '100%', height: '100%' }}>
-            <FlowCanvas
-              nodes={nodes}
-              edges={edges}
-              onNodeClick={onNodeClick}
-              fitTick={fitTick}
-              centerTargetId={centerTargetId}
-            />
+      <div className="main">
+        <div className="left-pane">
+          <textarea
+            className="json-input"
+            placeholder={SAMPLE_JSON}
+            value={jsonText}
+            onChange={e => setJsonText(e.target.value)}
+            spellCheck={false}
+          />
+          <div className="button-row">
+            <button className="btn primary" onClick={onVisualize}>Visualize</button>
+            <button className="btn" onClick={() => setJsonText(SAMPLE_JSON)}>Load Sample</button>
+            <button className="btn ghost" onClick={onClear}>Clear</button>
           </div>
-        </ReactFlowProvider>
+          <div className="search">
+            <input
+              className="search-input"
+              placeholder="Search JSONPath e.g. $.user.address.city or items[0].name"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') onSearch() }}
+            />
+            <button className="btn" onClick={onSearch}>Search</button>
+          </div>
+          {parseError && <div className="error">{parseError}</div>}
+          {msg && <div className="msg">{msg}</div>}
+        </div>
+        <div className="right-pane">
+          <ReactFlowProvider>
+            <div ref={flowWrapperRef} className="flow-wrapper" style={{ width: '100%', height: '100%' }}>
+              <FlowCanvas
+                nodes={nodes}
+                edges={edges}
+                onNodeClick={onNodeClick}
+                fitTick={fitTick}
+                centerTargetId={centerTargetId}
+              />
+            </div>
+          </ReactFlowProvider>
+        </div>
       </div>
       {showDownload && (
         <DownloadDialog
